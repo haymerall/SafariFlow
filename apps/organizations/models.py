@@ -1,4 +1,6 @@
+# pyrefly: ignore [missing-import]
 from django.db import models
+# pyrefly: ignore [missing-import]
 from django.utils.translation import gettext_lazy as _
 from apps.core.models import UUIDModel, TimeStampedModel
 

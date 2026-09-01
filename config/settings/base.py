@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+# pyrefly: ignore [missing-import]
 import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -37,6 +38,7 @@ INSTALLED_APPS = [
     'apps.core',
     'apps.accounts',
     'apps.organizations',
+    'apps.crm',
 ]
 
 MIDDLEWARE = [
