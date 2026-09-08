@@ -1,11 +1,11 @@
+# pyrefly: ignore [missing-import]
 from django.db import models
+# pyrefly: ignore [missing-import]
 from django.utils.translation import gettext_lazy as _
 from apps.core.models import UUIDModel, TimeStampedModel
 
 
-# ---------------------------------------------------------------------------
 # Status Choices
-# ---------------------------------------------------------------------------
 
 class VehicleStatus(models.TextChoices):
     ACTIVE = 'ACTIVE', _('Active')
@@ -24,10 +24,7 @@ class BookingStatus(models.TextChoices):
     COMPLETED = 'COMPLETED', _('Completed')
     CANCELLED = 'CANCELLED', _('Cancelled')
 
-
-# ---------------------------------------------------------------------------
 # Operational Assets
-# ---------------------------------------------------------------------------
 
 class Vehicle(UUIDModel, TimeStampedModel):
     """
