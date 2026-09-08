@@ -1,3 +1,4 @@
+# pyrefly: ignore [missing-import]
 from rest_framework import serializers
 from .models import Lead, Customer, Inquiry
 
@@ -45,3 +46,19 @@ class InquirySerializer(serializers.ModelSerializer):
 
     def get_customer_name(self, obj):
         return str(obj.customer) if obj.customer else None
+
+    def validate(self, attrs):
+        request = self.context.get('request')
+        org = getattr(getattr(request, 'user', None), 'organization', None)
+        if org is None:
+            return attrs
+        errors = {}
+        for name in ('lead', 'customer'):
+            obj = attrs.get(name, serializers.empty)
+            if obj is serializers.empty:
+                obj = getattr(self.instance, name, None) if self.instance else None
+            if obj is not None and obj.organization_id != org.id:
+                errors[name] = 'Must belong to your organization.'
+        if errors:
+            raise serializers.ValidationError(errors)
+        return attrs

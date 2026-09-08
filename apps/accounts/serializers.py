@@ -1,5 +1,8 @@
+# pyrefly: ignore [missing-import]
 from django.contrib.auth import get_user_model
+# pyrefly: ignore [missing-import]
 from rest_framework import serializers
+from apps.accounts.models import UserRole
 from apps.organizations.models import Organization
 
 User = get_user_model()
@@ -28,6 +31,8 @@ class RegisterSerializer(serializers.ModelSerializer):
         user = User(**validated_data)
         user.set_password(password)
         user.organization = organization
+        if organization is not None:
+            user.role = UserRole.COMPANY_ADMIN
         user.save()
         return user
 
