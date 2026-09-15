@@ -10,7 +10,7 @@ from apps.crm.models import Customer
 from apps.organizations.models import Organization
 from apps.tours.models import Booking
 
-from .models import Document, Invoice, Payment
+from .models import Document, Invoice, InvoiceStatus, Payment
 
 
 class FinanceTenantAPITestCase(APITestCase):
@@ -278,6 +278,38 @@ class FinancePaymentAPITests(FinanceTenantAPITestCase):
                 reference_number='OVERPAY600',
             ).exists()
         )
+
+    def test_full_payment_marks_invoice_as_paid(self):
+        response = self.client.post(
+            '/api/v1/finance/payments/',
+            {
+                'invoice': str(self.invoice_a.id),
+                'payment_date': '2026-10-04',
+                'amount_paid': '1500.00',
+                'payment_method': 'MPESA',
+                'reference_number': 'FULLPAY1500',
+            },
+            format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED
+        )
+
+        self.invoice_a.refresh_from_db()
+
+        self.assertEqual(
+            self.invoice_a.status,
+            InvoiceStatus.PAID
+        )
+
+        self.assertEqual(
+            self.invoice_a.balance_due,
+            0
+        )
+
+
 
     def test_payment_amount_must_be_positive(self):
         response = self.client.post(

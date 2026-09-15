@@ -1,11 +1,12 @@
 # pyrefly: ignore [missing-import]
+from django.db import transaction
 from rest_framework import viewsets
 from rest_framework.filters import OrderingFilter, SearchFilter
 
 from apps.core.mixins import OrganizationScopedMixin
 from apps.core.permissions import IsOrganizationMember
 
-from .models import Invoice, Payment, Document
+from .models import Invoice, Payment, Document, InvoiceStatus
 from .serializers import (
     InvoiceSerializer,
     PaymentSerializer,
@@ -86,7 +87,19 @@ class PaymentViewSet(
         'amount_paid',
         'created_at',
     )
+    @transaction.atomic
+    def perform_create(self, serializer):
+        payment = serializer.save(
+            organization=self.request.user.organization
+        )
 
+        invoice = Invoice.objects.select_for_update().get(
+            pk=payment.invoice_id
+        )
+
+        if invoice.balance_due == 0:
+            invoice.status = InvoiceStatus.PAID
+            invoice.save(update_fields=['status', 'updated_at'])
 
 class DocumentViewSet(
     OrganizationScopedMixin,
