@@ -387,15 +387,32 @@ class PaymentSerializer(SameOrganizationMixin, serializers.ModelSerializer):
 
         amount_paid = attrs.get(
             'amount_paid',
-            getattr(self.instance, 'amount_paid', None)
+            getattr(self.instance, 'amount_paid', None),
         )
 
         if amount_paid is not None and amount_paid <= 0:
             raise serializers.ValidationError({
-                'amount_paid': (
-                    'Payment amount must be greater than zero.'
-                )
+                'amount_paid': 'Payment amount must be greater than zero.'
             })
+
+        invoice = attrs.get(
+            'invoice',
+            getattr(self.instance, 'invoice', None),
+        )
+
+        if invoice is not None and amount_paid is not None:
+            current_balance = invoice.balance_due
+
+            if self.instance is not None:
+                current_balance += self.instance.amount_paid
+
+            if amount_paid > current_balance:
+                raise serializers.ValidationError({
+                    'amount_paid': (
+                        f'Payment cannot exceed the invoice balance '
+                        f'of {current_balance:.2f}.'
+                    )
+                })
 
         return attrs
 

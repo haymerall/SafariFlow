@@ -240,6 +240,45 @@ class FinancePaymentAPITests(FinanceTenantAPITestCase):
             response.data
         )
 
+    def test_payment_cannot_exceed_invoice_balance(self):
+        Payment.objects.create(
+            organization=self.org_a,
+            invoice=self.invoice_a,
+            payment_date='2026-10-02',
+            amount_paid='1000.00',
+            payment_method='MPESA',
+            reference_number='INITIAL1000',
+        )
+
+        response = self.client.post(
+            '/api/v1/finance/payments/',
+            {
+                'invoice': str(self.invoice_a.id),
+                'payment_date': '2026-10-03',
+                'amount_paid': '600.00',
+                'payment_method': 'MPESA',
+                'reference_number': 'OVERPAY600',
+            },
+            format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST
+        )
+
+        self.assertIn(
+            'amount_paid',
+            response.data
+        )
+
+        self.assertFalse(
+            Payment.objects.filter(
+                invoice=self.invoice_a,
+                reference_number='OVERPAY600',
+            ).exists()
+        )
+
     def test_payment_amount_must_be_positive(self):
         response = self.client.post(
             '/api/v1/finance/payments/',
