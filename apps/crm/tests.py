@@ -71,7 +71,41 @@ class CrmTenantIsolationTests(APITestCase):
 
         self.assertIn(str(self.customer_a.id), returned_ids)
         self.assertNotIn(str(self.customer_b.id), returned_ids)
+    def test_super_admin_can_see_customers_across_organizations(self):
+        super_admin = User.objects.create_user(
+            username='superadmin',
+            password='password123',
+            organization=None,
+            role=UserRole.SUPER_ADMIN,
+        )
 
+        self.client.force_authenticate(super_admin)
+
+        response = self.client.get('/api/v1/crm/customers/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        returned_ids = {
+            item['id']
+            for item in response.data['results']
+        }
+
+        self.assertIn(str(self.customer_a.id), returned_ids)
+        self.assertIn(str(self.customer_b.id), returned_ids)
+
+    def test_user_without_organization_sees_no_customers(self):
+        user = User.objects.create_user(
+            username='noorg',
+            password='password123',
+            organization=None,
+            role=UserRole.TOUR_CONSULTANT,
+        )
+
+        self.client.force_authenticate(user)
+
+        response = self.client.get('/api/v1/crm/customers/')
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
     def test_customer_from_another_organization_cannot_be_retrieved(self):
         response = self.client.get(
             f'/api/v1/crm/customers/{self.customer_b.id}/'
